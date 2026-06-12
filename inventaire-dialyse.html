@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Inventaire Dialyse</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue:#0B3D91; --blue-mid:#1A56C4; --blue-lt:#EEF3FF;
+    --mint:#10B981; --red:#EF4444; --red-lt:#FEF2F2;
+    --amber:#F59E0B;
+    --gray-1:#F8FAFC; --gray-2:#F1F5F9; --gray-3:#CBD5E1;
+    --gray-4:#94A3B8; --gray-5:#64748B; --gray-6:#334155;
+    --text:#0F172A; --white:#FFFFFF;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+    --radius:14px; --radius-sm:8px;
+  }
+  html,body {
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--gray-1); color:var(--text);
+    min-height:100vh; max-width:430px; margin:0 auto;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* AUTH SCREEN */
+  #auth-screen {
+    min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:32px 24px;
+  }
+  .auth-logo {
+    width:72px; height:72px; border-radius:20px;
+    background:var(--blue); display:flex; align-items:center;
+    justify-content:center; font-size:36px; margin-bottom:24px;
+  }
+  .auth-title { font-size:22px; font-weight:700; margin-bottom:6px; text-align:center; }
+  .auth-sub   { font-size:14px; color:var(--gray-5); margin-bottom:32px; text-align:center; }
+  .auth-card  {
+    width:100%; background:var(--white); border-radius:var(--radius);
+    padding:24px; box-shadow:var(--shadow);
+  }
+  .auth-field { margin-bottom:16px; }
+  .auth-field label { display:block; font-size:12px; font-weight:600; color:var(--gray-5); margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px; }
+  .auth-field input {
+    width:100%; padding:12px 14px; border:1.5px solid var(--gray-3);
+    border-radius:var(--radius-sm); font-size:15px; font-family:inherit;
+    background:var(--gray-1); color:var(--text);
+  }
+  .auth-field input:focus { outline:none; border-color:var(--blue-mid); }
+  .btn-primary {
+    width:100%; padding:14px; border:none;
+    background:var(--blue); color:var(--white);
+    border-radius:var(--radius-sm); font-size:15px; font-weight:700;
+    cursor:pointer; font-family:inherit; margin-top:4px;
+  }
+  .btn-primary:active { background:var(--blue-mid); }
+  .auth-error {
+    color:var(--red); font-size:13px; margin-top:12px;
+    text-align:center; display:none;
+  }
+  .auth-toggle {
+    text-align:center; margin-top:16px; font-size:13px; color:var(--gray-5);
+  }
+  .auth-toggle a { color:var(--blue-mid); font-weight:600; cursor:pointer; text-decoration:none; }
+
+  /* APP SCREEN */
+  #app-screen { display:none; }
+
+  header {
+    background:var(--blue); color:var(--white);
+    padding:18px 20px 0; position:sticky; top:0; z-index:50;
+  }
+  .header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .header-title { font-size:17px; font-weight:700; letter-spacing:-.3px; }
+  .header-sub   { font-size:11px; font-weight:400; opacity:.65; margin-top:1px; }
+  .header-right { display:flex; align-items:center; gap:10px; }
+  .btn-logout {
+    padding:6px 12px; border:1.5px solid rgba(255,255,255,.4);
+    border-radius:99px; background:transparent; color:var(--white);
+    font-size:11px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .sync-dot {
+    width:8px; height:8px; border-radius:50%; background:#6EE7B7;
+    flex-shrink:0;
+  }
+  .sync-dot.offline { background:#FCA5A5; }
+
+  .tabs { display:flex; gap:4px; }
+  .tab {
+    flex:1; padding:9px 4px; border:none; background:transparent;
+    color:rgba(255,255,255,.55); font-size:12px; font-weight:600;
+    letter-spacing:.3px; cursor:pointer; border-bottom:2px solid transparent;
+    transition:color .15s,border-color .15s; font-family:inherit;
+  }
+  .tab.active { color:var(--white); border-bottom-color:var(--white); }
+
+  main { padding:16px 16px 100px; }
+
+  .summary-banner {
+    background:var(--white); border-radius:var(--radius);
+    padding:14px 16px; margin-bottom:14px;
+    box-shadow:var(--shadow);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .summary-label { font-size:12px; color:var(--gray-5); font-weight:500; }
+  .summary-loc { display:flex; gap:16px; }
+  .summary-item { text-align:center; }
+  .summary-item .val {
+    font-family:'JetBrains Mono',monospace;
+    font-size:20px; font-weight:600; color:var(--blue); line-height:1;
+  }
+  .summary-item .lbl { font-size:10px; color:var(--gray-4); margin-top:2px; text-transform:uppercase; letter-spacing:.5px; }
+
+  .reset-bar { display:flex; gap:8px; margin-bottom:8px; }
+  .btn-reset {
+    flex:1; padding:10px; border:1.5px solid var(--red);
+    border-radius:var(--radius-sm); background:var(--white);
+    color:var(--red); font-size:12px; font-weight:600; cursor:pointer;
+    font-family:inherit; display:flex; align-items:center; justify-content:center; gap:5px;
+  }
+  .btn-reset-all {
+    width:100%; padding:10px; border:1.5px solid var(--red);
+    border-radius:var(--radius-sm); background:var(--white);
+    color:var(--red); font-size:12px; font-weight:600; cursor:pointer;
+    font-family:inherit; display:flex; align-items:center; justify-content:center; gap:5px;
+    margin-bottom:14px;
+  }
+  .section-title {
+    font-size:11px; font-weight:700; color:var(--gray-4);
+    text-transform:uppercase; letter-spacing:.8px; margin:4px 0 10px 2px;
+  }
+
+  .item-card {
+    background:var(--white); border-radius:var(--radius);
+    box-shadow:var(--shadow); margin-bottom:10px; overflow:hidden;
+  }
+  .item-head {
+    display:flex; align-items:center;
+    padding:13px 14px 10px; gap:10px; cursor:pointer; user-select:none;
+  }
+  .item-icon {
+    width:34px; height:34px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; flex-shrink:0;
+  }
+  .item-name { font-size:14px; font-weight:600; flex:1; line-height:1.25; }
+  .item-total { font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; }
+  .item-total.ok    { color:var(--mint); }
+  .item-total.low   { color:var(--amber); }
+  .item-total.empty { color:var(--red); }
+
+  .split-bar-wrap { padding:0 14px 8px; }
+  .split-bar { height:5px; border-radius:99px; background:var(--gray-2); overflow:hidden; display:flex; }
+  .split-box  { background:var(--blue-mid); transition:width .3s; }
+  .split-appt { background:var(--mint); transition:width .3s; }
+  .split-labels { display:flex; justify-content:space-between; margin-top:4px; font-size:10px; color:var(--gray-4); }
+  .split-labels span { display:flex; align-items:center; gap:3px; }
+  .dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .dot-box  { background:var(--blue-mid); }
+  .dot-appt { background:var(--mint); }
+
+  .item-form { padding:0 14px 14px; border-top:1px solid var(--gray-2); display:none; }
+  .item-form.open { display:block; padding-top:12px; }
+  .form-row { display:flex; gap:8px; margin-bottom:8px; }
+  .form-field { flex:1; }
+  .form-field label {
+    display:block; font-size:11px; font-weight:600;
+    color:var(--gray-5); margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px;
+  }
+  .qty-input-wrap {
+    display:flex; align-items:center;
+    border:1.5px solid var(--gray-3); border-radius:var(--radius-sm);
+    overflow:hidden; background:var(--gray-1);
+  }
+  .qty-input-wrap:focus-within { border-color:var(--blue-mid); }
+  .qty-btn {
+    width:40px; height:44px; border:none; background:transparent;
+    font-size:20px; color:var(--gray-5); cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:inherit; touch-action:manipulation;
+  }
+  .qty-btn:active { background:var(--gray-2); }
+  .qty-input {
+    flex:1; border:none; background:transparent; text-align:center;
+    font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:600;
+    color:var(--text); width:0; min-width:0; height:44px;
+    -moz-appearance:textfield;
+  }
+  .qty-input:focus { outline:none; }
+  .qty-input::-webkit-outer-spin-button,
+  .qty-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+
+  .btn-save {
+    width:100%; padding:13px; border:none;
+    background:var(--blue); color:var(--white);
+    border-radius:var(--radius-sm); font-size:14px; font-weight:700;
+    cursor:pointer; font-family:inherit; margin-top:4px;
+    touch-action:manipulation;
+  }
+  .btn-save:active { background:var(--blue-mid); }
+
+  .chevron { width:18px; height:18px; color:var(--gray-4); transition:transform .2s; flex-shrink:0; }
+  .chevron.open { transform:rotate(180deg); }
+
+  .overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.4); z-index:100;
+    align-items:flex-end; justify-content:center;
+  }
+  .overlay.show { display:flex; }
+  .modal {
+    background:var(--white); border-radius:20px 20px 0 0;
+    padding:24px 24px 40px; width:100%; max-width:430px;
+  }
+  .modal h3 { font-size:17px; font-weight:700; margin-bottom:8px; }
+  .modal p  { font-size:14px; color:var(--gray-5); margin-bottom:20px; line-height:1.5; }
+  .modal-btns { display:flex; gap:10px; }
+  .btn-cancel {
+    flex:1; padding:13px; border:1.5px solid var(--gray-3);
+    background:var(--white); border-radius:var(--radius-sm);
+    font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .btn-confirm {
+    flex:1; padding:13px; border:none;
+    background:var(--red); color:var(--white);
+    border-radius:var(--radius-sm); font-size:14px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
+
+  .toast {
+    position:fixed; bottom:88px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--gray-6); color:var(--white);
+    padding:10px 18px; border-radius:99px;
+    font-size:13px; font-weight:500;
+    opacity:0; transition:opacity .2s,transform .2s;
+    pointer-events:none; white-space:nowrap; z-index:200;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .loading {
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; min-height:200px; color:var(--gray-4);
+    font-size:14px; gap:12px;
+  }
+  .spinner {
+    width:32px; height:32px; border:3px solid var(--gray-2);
+    border-top-color:var(--blue); border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-logo">💊</div>
+  <div class="auth-title">Inventaire Dialyse</div>
+  <div class="auth-sub">Connectez-vous pour accéder aux stocks</div>
+  <div class="auth-card">
+    <div class="auth-field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="votre@email.com" autocomplete="email">
+    </div>
+    <div class="auth-field">
+      <label>Mot de passe</label>
+      <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" id="btn-login">Se connecter</button>
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-toggle">
+      Pas encore de compte ? <a id="toggle-mode">Créer un compte</a>
+    </div>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <header>
+    <div class="header-top">
+      <div>
+        <div class="header-title">Inventaire Dialyse</div>
+        <div class="header-sub" id="user-email-display"></div>
+      </div>
+      <div class="header-right">
+        <div class="sync-dot" id="sync-dot" title="Synchronisé"></div>
+        <button class="btn-logout" id="btn-logout">Déconnexion</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="total">Total</button>
+      <button class="tab" data-tab="box">📦 Box</button>
+      <button class="tab" data-tab="appt">🏠 Appartement</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="view-total">
+      <div class="summary-banner">
+        <div>
+          <div class="summary-label">Vue d'ensemble</div>
+          <div style="font-size:11px;color:var(--gray-4);margin-top:2px;">Box + Appartement</div>
+        </div>
+        <div class="summary-loc">
+          <div class="summary-item">
+            <div class="val" id="total-box-sum">0</div>
+            <div class="lbl">Box</div>
+          </div>
+          <div class="summary-item">
+            <div class="val" id="total-appt-sum">0</div>
+            <div class="lbl">Appt</div>
+          </div>
+          <div class="summary-item">
+            <div class="val" id="total-grand">0</div>
+            <div class="lbl">Total</div>
+          </div>
+        </div>
+      </div>
+      <div class="reset-bar">
+        <button class="btn-reset" id="rbtn-box">🗑 Box à zéro</button>
+        <button class="btn-reset" id="rbtn-appt">🗑 Appt à zéro</button>
+      </div>
+      <button class="btn-reset-all" id="rbtn-all">🗑 Tout remettre à zéro</button>
+      <div class="section-title">Tous les articles</div>
+      <div id="cards-total"><div class="loading"><div class="spinner"></div>Chargement…</div></div>
+    </div>
+
+    <div id="view-box" style="display:none">
+      <div class="section-title">Stocks Box</div>
+      <div id="cards-box"><div class="loading"><div class="spinner"></div>Chargement…</div></div>
+    </div>
+
+    <div id="view-appt" style="display:none">
+      <div class="section-title">Stocks Appartement</div>
+      <div id="cards-appt"><div class="loading"><div class="spinner"></div>Chargement…</div></div>
+    </div>
+  </main>
+</div>
+
+<!-- Reset modal -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">Remettre à zéro</h3>
+    <p id="modal-msg">Confirmer ?</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" id="modal-cancel">Annuler</button>
+      <button class="btn-confirm" id="modal-confirm">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAhTd6EXPjF2Ipn1-MjStRP2BV9jYpZ7xs",
+  authDomain: "diahome-6af99.firebaseapp.com",
+  projectId: "diahome-6af99",
+  storageBucket: "diahome-6af99.firebasestorage.app",
+  messagingSenderId: "522192901914",
+  appId: "1:522192901914:web:6c1e2fe9cb4250461b7ea3"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+const ITEMS = [
+  { id:'dialysats',   name:'Dialysats',           icon:'🫧', color:'#EEF3FF' },
+  { id:'lignes',      name:'Lignes à sang',        icon:'🩸', color:'#FEF2F2' },
+  { id:'k7flow',      name:'K7 Flow',              icon:'⚙️', color:'#F0FDF4' },
+  { id:'k7ergo',      name:'K7 Ergo',              icon:'🔧', color:'#FFF7ED' },
+  { id:'dialyseurs',  name:'Dialyseurs',            icon:'💉', color:'#EFF6FF' },
+  { id:'sodiums',     name:'Sodiums',               icon:'🧪', color:'#FEFCE8' },
+  { id:'aiguilles',   name:'Aiguilles à fistule',  icon:'🪡', color:'#FDF4FF' },
+  { id:'rallonges',   name:'Rallonges aiguilles',  icon:'🔗', color:'#F0FDF4' },
+  { id:'kits',        name:'Kits de ponction',     icon:'🎒', color:'#EFF6FF' },
+  { id:'tuyaux',      name:'Tuyaux égout',         icon:'🌀', color:'#F8FAFC' },
+  { id:'raccords',    name:'Raccords Y',            icon:'🔀', color:'#FFF7ED' },
+  { id:'enoxaparine', name:'Enoxaparine',           icon:'💊', color:'#FEF2F2' },
+];
+
+const STOCK_DOC = 'stocks/inventaire';
+let stock = {};
+let unsubscribe = null;
+
+// ─── INIT DEFAULT STOCK ───
+function defaultStock() {
+  const d = {};
+  ITEMS.forEach(it => { d[it.id] = { box:0, appt:0 }; });
+  return d;
+}
+
+// ─── FIRESTORE REALTIME ───
+function startListening() {
+  const ref = doc(db, STOCK_DOC);
+  unsubscribe = onSnapshot(ref, (snap) => {
+    document.getElementById('sync-dot').classList.remove('offline');
+    if (snap.exists()) {
+      stock = snap.data();
+    } else {
+      stock = defaultStock();
+      setDoc(ref, stock);
+    }
+    renderAll();
+  }, (err) => {
+    document.getElementById('sync-dot').classList.add('offline');
+    console.error(err);
+  });
+}
+
+function stopListening() {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+}
+
+async function saveStock() {
+  try {
+    await setDoc(doc(db, STOCK_DOC), stock);
+  } catch(e) { showToast('⚠️ Erreur de synchronisation'); }
+}
+
+// ─── AUTH ───
+let isRegister = false;
+
+document.getElementById('toggle-mode').addEventListener('click', () => {
+  isRegister = !isRegister;
+  document.getElementById('btn-login').textContent = isRegister ? "Créer le compte" : "Se connecter";
+  document.getElementById('toggle-mode').textContent = isRegister ? "J'ai déjà un compte" : "Créer un compte";
+  document.querySelector('.auth-toggle').firstChild.textContent = isRegister ? "Déjà un compte ? " : "Pas encore de compte ? ";
+  document.getElementById('auth-error').style.display = 'none';
+});
+
+document.getElementById('btn-login').addEventListener('click', async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent = "Veuillez remplir tous les champs."; errEl.style.display='block'; return; }
+  try {
+    if (isRegister) {
+      await createUserWithEmailAndPassword(auth, email, pass);
+    } else {
+      await signInWithEmailAndPassword(auth, email, pass);
+    }
+  } catch(e) {
+    const msgs = {
+      'auth/invalid-email':'Email invalide.',
+      'auth/user-not-found':'Aucun compte avec cet email.',
+      'auth/wrong-password':'Mot de passe incorrect.',
+      'auth/email-already-in-use':'Cet email est déjà utilisé.',
+      'auth/weak-password':'Mot de passe trop faible (6 caractères min).',
+      'auth/invalid-credential':'Email ou mot de passe incorrect.',
+    };
+    errEl.textContent = msgs[e.code] || ('Erreur : ' + e.message);
+    errEl.style.display = 'block';
+  }
+});
+
+// Enter key on password
+document.getElementById('auth-password').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('btn-login').click();
+});
+
+document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display  = 'block';
+    document.getElementById('user-email-display').textContent = user.email;
+    startListening();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display  = 'none';
+    stopListening();
+    stock = {};
+  }
+});
+
+// ─── RENDER ───
+function colorClass(v) { return v===0?'empty':v<5?'low':'ok'; }
+
+function renderCards(mode) {
+  const el = document.getElementById('cards-' + mode);
+  if (!el) return;
+  el.innerHTML = '';
+  ITEMS.forEach(it => {
+    const s = stock[it.id] || { box:0, appt:0 };
+    const box = s.box||0, appt = s.appt||0, total = box + appt;
+    const shown = mode==='total' ? total : mode==='box' ? box : appt;
+    const pct = total > 0 ? Math.round(box/total*100) : 50;
+
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.id = 'card-' + mode + '-' + it.id;
+
+    const head = document.createElement('div');
+    head.className = 'item-head';
+    head.innerHTML = `
+      <div class="item-icon" style="background:${it.color}">${it.icon}</div>
+      <div class="item-name">${it.name}</div>
+      <div class="item-total ${colorClass(shown)}" id="qty-${mode}-${it.id}">${shown}</div>
+      <svg class="chevron" id="chev-${mode}-${it.id}" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/>
+      </svg>`;
+    head.addEventListener('click', () => toggleForm(mode, it.id));
+    card.appendChild(head);
+
+    if (mode === 'total') {
+      const sb = document.createElement('div');
+      sb.className = 'split-bar-wrap';
+      sb.id = 'splitwrap-' + it.id;
+      sb.innerHTML = `
+        <div class="split-bar">
+          <div class="split-box"  id="sbox-${it.id}"  style="width:${pct}%"></div>
+          <div class="split-appt" id="sappt-${it.id}" style="width:${100-pct}%"></div>
+        </div>
+        <div class="split-labels">
+          <span><span class="dot dot-box"></span> Box : <b id="lbox-${it.id}">${box}</b></span>
+          <span><span class="dot dot-appt"></span> Appt : <b id="lappt-${it.id}">${appt}</b></span>
+        </div>`;
+      card.appendChild(sb);
+    }
+
+    const form = document.createElement('div');
+    form.className = 'item-form';
+    form.id = 'form-' + mode + '-' + it.id;
+
+    if (mode === 'total') {
+      form.innerHTML = `
+        <div class="form-row">
+          <div class="form-field">
+            <label><span class="dot dot-box" style="margin-right:4px"></span>Box</label>
+            <div class="qty-input-wrap">
+              <button class="qty-btn" data-loc="box" data-id="${it.id}" data-d="-1">−</button>
+              <input class="qty-input" type="number" inputmode="numeric" id="inp-box-${it.id}" value="${box}" min="0">
+              <button class="qty-btn" data-loc="box" data-id="${it.id}" data-d="1">+</button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label><span class="dot dot-appt" style="margin-right:4px"></span>Appartement</label>
+            <div class="qty-input-wrap">
+              <button class="qty-btn" data-loc="appt" data-id="${it.id}" data-d="-1">−</button>
+              <input class="qty-input" type="number" inputmode="numeric" id="inp-appt-${it.id}" value="${appt}" min="0">
+              <button class="qty-btn" data-loc="appt" data-id="${it.id}" data-d="1">+</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-save" data-mode="total" data-id="${it.id}">✓ Enregistrer</button>`;
+    } else {
+      const val = mode === 'box' ? box : appt;
+      form.innerHTML = `
+        <div class="form-row">
+          <div class="form-field">
+            <label><span class="dot ${mode==='box'?'dot-box':'dot-appt'}" style="margin-right:4px"></span>${mode==='box'?'Box':'Appartement'}</label>
+            <div class="qty-input-wrap">
+              <button class="qty-btn" data-loc="${mode}" data-id="${it.id}" data-d="-1">−</button>
+              <input class="qty-input" type="number" inputmode="numeric" id="inp-${mode}-${it.id}" value="${val}" min="0">
+              <button class="qty-btn" data-loc="${mode}" data-id="${it.id}" data-d="1">+</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-save" data-mode="${mode}" data-id="${it.id}">✓ Enregistrer</button>`;
+    }
+
+    form.querySelectorAll('.qty-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const loc = btn.dataset.loc, id = btn.dataset.id, d = parseInt(btn.dataset.d);
+        const inp = document.getElementById('inp-' + loc + '-' + id);
+        if (inp) inp.value = Math.max(0, (parseInt(inp.value)||0) + d);
+      });
+    });
+
+    form.querySelector('.btn-save').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const m = e.target.dataset.mode, id = e.target.dataset.id;
+      if (!stock[id]) stock[id] = { box:0, appt:0 };
+      if (m === 'total') {
+        stock[id].box  = Math.max(0, parseInt(document.getElementById('inp-box-' + id).value)||0);
+        stock[id].appt = Math.max(0, parseInt(document.getElementById('inp-appt-' + id).value)||0);
+      } else {
+        stock[id][m] = Math.max(0, parseInt(document.getElementById('inp-' + m + '-' + id).value)||0);
+      }
+      await saveStock();
+      toggleForm(m, id);
+      showToast('✓ Stock synchronisé');
+    });
+
+    card.appendChild(form);
+    el.appendChild(card);
+  });
+}
+
+function toggleForm(mode, id) {
+  const form = document.getElementById('form-' + mode + '-' + id);
+  const chev = document.getElementById('chev-' + mode + '-' + id);
+  if (!form) return;
+  const opening = !form.classList.contains('open');
+  form.classList.toggle('open', opening);
+  if (chev) chev.classList.toggle('open', opening);
+}
+
+function renderAll() {
+  ['total','box','appt'].forEach(mode => renderCards(mode));
+  updateSummary();
+}
+
+function updateSummary() {
+  let bSum=0, aSum=0;
+  ITEMS.forEach(it => {
+    const s = stock[it.id] || { box:0, appt:0 };
+    bSum += s.box||0; aSum += s.appt||0;
+  });
+  document.getElementById('total-box-sum').textContent  = bSum;
+  document.getElementById('total-appt-sum').textContent = aSum;
+  document.getElementById('total-grand').textContent    = bSum + aSum;
+}
+
+// ─── TABS ───
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    ['total','box','appt'].forEach(t => {
+      document.getElementById('view-' + t).style.display = t === btn.dataset.tab ? '' : 'none';
+    });
+  });
+});
+
+// ─── RESET ───
+let pendingReset = null;
+function confirmReset(target) {
+  pendingReset = target;
+  const labels = { box:'le Box', appt:"l'Appartement", all:'tous les stocks' };
+  document.getElementById('modal-title').textContent = 'Remettre à zéro';
+  document.getElementById('modal-msg').textContent = `Voulez-vous vraiment remettre à zéro ${labels[target]} ? Cette action est irréversible.`;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+document.getElementById('rbtn-box').addEventListener('click',  () => confirmReset('box'));
+document.getElementById('rbtn-appt').addEventListener('click', () => confirmReset('appt'));
+document.getElementById('rbtn-all').addEventListener('click',  () => confirmReset('all'));
+
+document.getElementById('modal-cancel').addEventListener('click', () => {
+  document.getElementById('modal-overlay').classList.remove('show');
+  pendingReset = null;
+});
+
+document.getElementById('modal-confirm').addEventListener('click', async () => {
+  ITEMS.forEach(it => {
+    if (!stock[it.id]) stock[it.id] = { box:0, appt:0 };
+    if (pendingReset==='all'||pendingReset==='box')  stock[it.id].box  = 0;
+    if (pendingReset==='all'||pendingReset==='appt') stock[it.id].appt = 0;
+  });
+  await saveStock();
+  document.getElementById('modal-overlay').classList.remove('show');
+  pendingReset = null;
+  showToast('🗑 Stocks remis à zéro');
+});
+
+// ─── TOAST ───
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
