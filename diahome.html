@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Inventaire Dialyse</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+--blue:#0B3D91; --blue-mid:#1A56C4; --blue-lt:#EEF3FF;
+--mint:#10B981; --mint-lt:#ECFDF5;
+--amber:#F59E0B; --red:#EF4444; --red-lt:#FEF2F2;
+--gray-1:#F8FAFC; --gray-2:#F1F5F9; --gray-3:#CBD5E1;
+--gray-4:#94A3B8; --gray-5:#64748B; --gray-6:#334155;
+--text:#0F172A; --white:#FFFFFF;
+--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+--radius:14px; --radius-sm:8px;
+}
+html,body {
+font-family:'Inter',system-ui,sans-serif;
+background:var(--gray-1); color:var(--text);
+min-height:100vh; max-width:430px; margin:0 auto;
+-webkit-font-smoothing:antialiased;
+}
+header {
+background:var(--blue); color:var(--white);
+padding:18px 20px 0; position:sticky; top:0; z-index:50;
+}
+.header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.header-title { font-size:17px; font-weight:700; letter-spacing:-.3px; }
+.header-sub { font-size:11px; font-weight:400; opacity:.65; margin-top:1px; }
+.header-logo {
+width:36px; height:36px; border-radius:10px;
+background:rgba(255,255,255,.15);
+display:flex; align-items:center; justify-content:center; font-size:18px;
+}
+.tabs { display:flex; gap:4px; }
+.tab {
+flex:1; padding:9px 4px; border:none; background:transparent;
+color:rgba(255,255,255,.55); font-size:12px; font-weight:600;
+letter-spacing:.3px; cursor:pointer; border-bottom:2px solid transparent;
+transition:color .15s,border-color .15s; font-family:inherit;
+}
+.tab.active { color:var(--white); border-bottom-color:var(--white); }
+main { padding:16px 16px 100px; }
+
+.summary-banner {
+background:var(--white); border-radius:var(--radius);
+padding:14px 16px; margin-bottom:14px;
+box-shadow:var(--shadow);
+display:flex; align-items:center; justify-content:space-between;
+}
+.summary-label { font-size:12px; color:var(--gray-5); font-weight:500; }
+.summary-loc { display:flex; gap:16px; }
+.summary-item { text-align:center; }
+.summary-item .val {
+font-family:'JetBrains Mono',monospace;
+font-size:20px; font-weight:600; color:var(--blue); line-height:1;
+}
+.summary-item .lbl { font-size:10px; color:var(--gray-4); margin-top:2px; text-transform:uppercase; letter-spacing:.5px; }
+
+.reset-bar { display:flex; gap:8px; margin-bottom:8px; }
+.btn-reset {
+flex:1; padding:10px; border:1.5px solid var(--red);
+border-radius:var(--radius-sm); background:var(--white);
+color:var(--red); font-size:12px; font-weight:600; cursor:pointer;
+font-family:inherit; display:flex; align-items:center; justify-content:center; gap:5px;
+}
+.btn-reset-all {
+width:100%; padding:10px; border:1.5px solid var(--red);
+border-radius:var(--radius-sm); background:var(--white);
+color:var(--red); font-size:12px; font-weight:600; cursor:pointer;
+font-family:inherit; display:flex; align-items:center; justify-content:center; gap:5px;
+margin-bottom:14px;
+}
+
+.section-title {
+font-size:11px; font-weight:700; color:var(--gray-4);
+text-transform:uppercase; letter-spacing:.8px; margin:4px 0 10px 2px;
+}
+
+.item-card {
+background:var(--white); border-radius:var(--radius);
+box-shadow:var(--shadow); margin-bottom:10px; overflow:hidden;
+}
+.item-head {
+display:flex; align-items:center;
+padding:13px 14px 10px; gap:10px; cursor:pointer;
+user-select:none;
+}
+.item-icon {
+width:34px; height:34px; border-radius:9px;
+display:flex; align-items:center; justify-content:center;
+font-size:15px; flex-shrink:0;
+}
+.item-name { font-size:14px; font-weight:600; flex:1; line-height:1.25; }
+.item-total { font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; }
+.item-total.ok { color:var(--mint); }
+.item-total.low { color:var(--amber); }
+.item-total.empty { color:var(--red); }
+
+.split-bar-wrap { padding:0 14px 8px; }
+.split-bar {
+height:5px; border-radius:99px;
+background:var(--gray-2); overflow:hidden; display:flex;
+}
+.split-box { background:var(--blue-mid); transition:width .3s; }
+.split-appt { background:var(--mint); transition:width .3s; }
+.split-labels {
+display:flex; justify-content:space-between;
+margin-top:4px; font-size:10px; color:var(--gray-4);
+}
+.split-labels span { display:flex; align-items:center; gap:3px; }
+.dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+.dot-box { background:var(--blue-mid); }
+.dot-appt { background:var(--mint); }
+
+.item-form {
+padding:0 14px 14px;
+border-top:1px solid var(--gray-2);
+display:none;
+}
+.item-form.open { display:block; padding-top:12px; }
+.form-row { display:flex; gap:8px; margin-bottom:8px; }
+.form-field { flex:1; }
+.form-field label {
+display:block; font-size:11px; font-weight:600;
+color:var(--gray-5); margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px;
+}
+.qty-input-wrap {
+display:flex; align-items:center;
+border:1.5px solid var(--gray-3); border-radius:var(--radius-sm);
+overflow:hidden; background:var(--gray-1);
+}
+.qty-input-wrap:focus-within { border-color:var(--blue-mid); }
+.qty-btn {
+width:40px; height:44px; border:none; background:transparent;
+font-size:20px; color:var(--gray-5); cursor:pointer; flex-shrink:0;
+display:flex; align-items:center; justify-content:center;
+font-family:inherit; touch-action:manipulation;
+}
+.qty-btn:active { background:var(--gray-2); }
+.qty-input {
+flex:1; border:none; background:transparent; text-align:center;
+font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:600;
+color:var(--text); width:0; min-width:0; height:44px;
+-moz-appearance:textfield;
+}
+.qty-input:focus { outline:none; }
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+
+.btn-save {
+width:100%; padding:13px; border:none;
+background:var(--blue); color:var(--white);
+border-radius:var(--radius-sm); font-size:14px; font-weight:700;
+cursor:pointer; font-family:inherit; margin-top:4px;
+touch-action:manipulation;
+}
+.btn-save:active { background:var(--blue-mid); }
+
+.chevron {
+width:18px; height:18px; color:var(--gray-4);
+transition:transform .2s; flex-shrink:0;
+}
+.chevron.open { transform:rotate(180deg); }
+
+.overlay {
+display:none; position:fixed; inset:0;
+background:rgba(0,0,0,.4); z-index:100;
+align-items:flex-end; justify-content:center;
+}
+.overlay.show { display:flex; }
+.modal {
+background:var(--white); border-radius:20px 20px 0 0;
+padding:24px 24px 40px; width:100%; max-width:430px;
+}
+.modal h3 { font-size:17px; font-weight:700; margin-bottom:8px; }
+.modal p { font-size:14px; color:var(--gray-5); margin-bottom:20px; line-height:1.5; }
+.modal-btns { display:flex; gap:10px; }
+.btn-cancel {
+flex:1; padding:13px; border:1.5px solid var(--gray-3);
+background:var(--white); border-radius:var(--radius-sm);
+font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+}
+.btn-confirm {
+flex:1; padding:13px; border:none;
+background:var(--red); color:var(--white);
+border-radius:var(--radius-sm); font-size:14px; font-weight:700;
+cursor:pointer; font-family:inherit;
+}
+.toast {
+position:fixed; bottom:88px; left:50%;
+transform:translateX(-50%) translateY(20px);
+background:var(--gray-6); color:var(--white);
+padding:10px 18px; border-radius:99px;
+font-size:13px; font-weight:500;
+opacity:0; transition:opacity .2s,transform .2s;
+pointer-events:none; white-space:nowrap; z-index:200;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-top">
+<div>
+<div class="header-title">Inventaire Dialyse</div>
+<div class="header-sub">Gestion des stocks médicaux</div>
+</div>
+<div class="header-logo">💊</div>
+</div>
+<div class="tabs">
+<button class="tab active" data-tab="total">Total</button>
+<button class="tab" data-tab="box">📦 Box</button>
+<button class="tab" data-tab="appt">🏠 Appartement</button>
+</div>
+</header>
+
+<main>
+<div id="view-total">
+<div class="summary-banner">
+<div>
+<div class="summary-label">Vue d'ensemble</div>
+<div style="font-size:11px;color:var(--gray-4);margin-top:2px;">Box + Appartement</div>
+</div>
+<div class="summary-loc">
+<div class="summary-item">
+<div class="val" id="total-box-sum">0</div>
+<div class="lbl">Box</div>
+</div>
+<div class="summary-item">
+<div class="val" id="total-appt-sum">0</div>
+<div class="lbl">Appt</div>
+</div>
+<div class="summary-item">
+<div class="val" id="total-grand">0</div>
+<div class="lbl">Total</div>
+</div>
+</div>
+</div>
+<div class="reset-bar">
+<button class="btn-reset" id="rbtn-box">🗑 Box à zéro</button>
+<button class="btn-reset" id="rbtn-appt">🗑 Appt à zéro</button>
+</div>
+<button class="btn-reset-all" id="rbtn-all">🗑 Tout remettre à zéro</button>
+<div class="section-title">Tous les articles</div>
+<div id="cards-total"></div>
+</div>
+
+<div id="view-box" style="display:none">
+<div class="section-title">Stocks Box</div>
+<div id="cards-box"></div>
+</div>
+
+<div id="view-appt" style="display:none">
+<div class="section-title">Stocks Appartement</div>
+<div id="cards-appt"></div>
+</div>
+</main>
+
+<div class="overlay" id="modal-overlay">
+<div class="modal">
+<h3 id="modal-title">Remettre à zéro</h3>
+<p id="modal-msg">Confirmer ?</p>
+<div class="modal-btns">
+<button class="btn-cancel" id="modal-cancel">Annuler</button>
+<button class="btn-confirm" id="modal-confirm">Confirmer</button>
+</div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ITEMS = [
+{ id:'dialysats', name:'Dialysats', icon:'🫧', color:'#EEF3FF' },
+{ id:'lignes', name:'Lignes à sang', icon:'🩸', color:'#FEF2F2' },
+{ id:'k7flow', name:'K7 Flow', icon:'⚙️', color:'#F0FDF4' },
+{ id:'k7ergo', name:'K7 Ergo', icon:'🔧', color:'#FFF7ED' },
+{ id:'dialyseurs', name:'Dialyseurs', icon:'💉', color:'#EFF6FF' },
+{ id:'sodiums', name:'Sodiums', icon:'🧪', color:'#FEFCE8' },
+{ id:'aiguilles', name:'Aiguilles à fistule', icon:'🪡', color:'#FDF4FF' },
+{ id:'rallonges', name:'Rallonges aiguilles', icon:'🔗', color:'#F0FDF4' },
+{ id:'kits', name:'Kits de ponction', icon:'🎒', color:'#EFF6FF' },
+{ id:'tuyaux', name:'Tuyaux égout', icon:'🌀', color:'#F8FAFC' },
+{ id:'raccords', name:'Raccords Y', icon:'🔀', color:'#FFF7ED' },
+{ id:'enoxaparine', name:'Enoxaparine', icon:'💊', color:'#FEF2F2' },
+];
+
+function loadStock() {
+try { const s = localStorage.getItem('dialyse_v2'); if (s) return JSON.parse(s); } catch(e){}
+const d = {};
+ITEMS.forEach(it => { d[it.id] = { box:0, appt:0 }; });
+return d;
+}
+function saveStock() { localStorage.setItem('dialyse_v2', JSON.stringify(stock)); }
+let stock = loadStock();
+
+function colorClass(v) { return v===0?'empty':v<5?'low':'ok'; }
+
+function renderCards(mode) {
+const el = document.getElementById('cards-' + mode);
+if (!el) return;
+el.innerHTML = '';
+ITEMS.forEach(it => {
+const s = stock[it.id];
+const box = s.box, appt = s.appt, total = box + appt;
+const shown = mode==='total' ? total : mode==='box' ? box : appt;
+const pct = total > 0 ? Math.round(box/total*100) : 50;
+
+const card = document.createElement('div');
+card.className = 'item-card';
+card.id = 'card-' + mode + '-' + it.id;
+
+// HEAD
+const head = document.createElement('div');
+head.className = 'item-head';
+head.innerHTML = `
+<div class="item-icon" style="background:${it.color}">${it.icon}</div>
+<div class="item-name">${it.name}</div>
+<div class="item-total ${colorClass(shown)}" id="qty-${mode}-${it.id}">${shown}</div>
+<svg class="chevron" id="chev-${mode}-${it.id}" viewBox="0 0 20 20" fill="currentColor">
+<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/>
+</svg>`;
+head.addEventListener('click', () => toggleForm(mode, it.id));
+card.appendChild(head);
+
+// SPLIT BAR (total only)
+if (mode === 'total') {
+const sb = document.createElement('div');
+sb.className = 'split-bar-wrap';
+sb.id = 'splitwrap-' + it.id;
+sb.innerHTML = `
+<div class="split-bar">
+<div class="split-box" id="sbox-${it.id}" style="width:${pct}%"></div>
+<div class="split-appt" id="sappt-${it.id}" style="width:${100-pct}%"></div>
+</div>
+<div class="split-labels">
+<span><span class="dot dot-box"></span> Box : <b id="lbox-${it.id}">${box}</b></span>
+<span><span class="dot dot-appt"></span> Appt : <b id="lappt-${it.id}">${appt}</b></span>
+</div>`;
+card.appendChild(sb);
+}
+
+// FORM
+const form = document.createElement('div');
+form.className = 'item-form';
+form.id = 'form-' + mode + '-' + it.id;
+
+if (mode === 'total') {
+form.innerHTML = `
+<div class="form-row">
+<div class="form-field">
+<label><span class="dot dot-box" style="margin-right:4px"></span>Box</label>
+<div class="qty-input-wrap">
+<button class="qty-btn" data-loc="box" data-id="${it.id}" data-d="-1">−</button>
+<input class="qty-input" type="number" inputmode="numeric" id="inp-box-${it.id}" value="${box}" min="0">
+<button class="qty-btn" data-loc="box" data-id="${it.id}" data-d="1">+</button>
+</div>
+</div>
+<div class="form-field">
+<label><span class="dot dot-appt" style="margin-right:4px"></span>Appartement</label>
+<div class="qty-input-wrap">
+<button class="qty-btn" data-loc="appt" data-id="${it.id}" data-d="-1">−</button>
+<input class="qty-input" type="number" inputmode="numeric" id="inp-appt-${it.id}" value="${appt}" min="0">
+<button class="qty-btn" data-loc="appt" data-id="${it.id}" data-d="1">+</button>
+</div>
+</div>
+</div>
+<button class="btn-save" data-mode="total" data-id="${it.id}">✓ Enregistrer</button>`;
+} else {
+const val = mode === 'box' ? box : appt;
+form.innerHTML = `
+<div class="form-row">
+<div class="form-field">
+<label><span class="dot ${mode==='box'?'dot-box':'dot-appt'}" style="margin-right:4px"></span>${mode==='box'?'Box':'Appartement'}</label>
+<div class="qty-input-wrap">
+<button class="qty-btn" data-loc="${mode}" data-id="${it.id}" data-d="-1">−</button>
+<input class="qty-input" type="number" inputmode="numeric" id="inp-${mode}-${it.id}" value="${val}" min="0">
+<button class="qty-btn" data-loc="${mode}" data-id="${it.id}" data-d="1">+</button>
+</div>
+</div>
+</div>
+<button class="btn-save" data-mode="${mode}" data-id="${it.id}">✓ Enregistrer</button>`;
+}
+
+// Wire up +/- buttons
+form.querySelectorAll('.qty-btn').forEach(btn => {
+btn.addEventListener('click', (e) => {
+e.stopPropagation();
+const loc = btn.dataset.loc, id = btn.dataset.id, d = parseInt(btn.dataset.d);
+const inp = document.getElementById('inp-' + loc + '-' + id);
+if (inp) { let v = Math.max(0, (parseInt(inp.value)||0) + d); inp.value = v; }
+});
+});
+
+// Wire up save button
+form.querySelector('.btn-save').addEventListener('click', (e) => {
+e.stopPropagation();
+const m = e.target.dataset.mode, id = e.target.dataset.id;
+if (m === 'total') {
+stock[id].box = Math.max(0, parseInt(document.getElementById('inp-box-' + id).value)||0);
+stock[id].appt = Math.max(0, parseInt(document.getElementById('inp-appt-' + id).value)||0);
+} else {
+stock[id][m] = Math.max(0, parseInt(document.getElementById('inp-' + m + '-' + id).value)||0);
+}
+saveStock();
+refreshAll();
+toggleForm(m, id);
+showToast('✓ Stock mis à jour');
+});
+
+card.appendChild(form);
+el.appendChild(card);
+});
+}
+
+function toggleForm(mode, id) {
+const form = document.getElementById('form-' + mode + '-' + id);
+const chev = document.getElementById('chev-' + mode + '-' + id);
+if (!form) return;
+const opening = !form.classList.contains('open');
+form.classList.toggle('open', opening);
+if (chev) chev.classList.toggle('open', opening);
+}
+
+function refreshAll() {
+updateSummary();
+ITEMS.forEach(it => {
+['total','box','appt'].forEach(mode => {
+const s = stock[it.id];
+const val = mode==='total' ? s.box+s.appt : mode==='box' ? s.box : s.appt;
+const el = document.getElementById('qty-' + mode + '-' + it.id);
+if (el) { el.textContent = val; el.className = 'item-total ' + colorClass(val); }
+// update inputs if form is open
+const inp = document.getElementById('inp-' + mode + '-' + it.id);
+if (inp) inp.value = val;
+});
+// update split bar
+const s = stock[it.id];
+const total = s.box + s.appt;
+const pct = total > 0 ? Math.round(s.box/total*100) : 50;
+const sb = document.getElementById('sbox-' + it.id);
+const sa = document.getElementById('sappt-' + it.id);
+const lb = document.getElementById('lbox-' + it.id);
+const la = document.getElementById('lappt-' + it.id);
+if (sb) sb.style.width = pct + '%';
+if (sa) sa.style.width = (100-pct) + '%';
+if (lb) lb.textContent = s.box;
+if (la) la.textContent = s.appt;
+// update total qty display
+const qt = document.getElementById('qty-total-' + it.id);
+if (qt) { qt.textContent = total; qt.className = 'item-total ' + colorClass(total); }
+// also update box/appt inputs
+const ib = document.getElementById('inp-box-' + it.id);
+const ia = document.getElementById('inp-appt-' + it.id);
+if (ib) ib.value = s.box;
+if (ia) ia.value = s.appt;
+});
+}
+
+function updateSummary() {
+let bSum=0, aSum=0;
+ITEMS.forEach(it => { bSum += stock[it.id].box; aSum += stock[it.id].appt; });
+document.getElementById('total-box-sum').textContent = bSum;
+document.getElementById('total-appt-sum').textContent = aSum;
+document.getElementById('total-grand').textContent = bSum + aSum;
+}
+
+// TABS
+document.querySelectorAll('.tab').forEach(btn => {
+btn.addEventListener('click', () => {
+document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+btn.classList.add('active');
+['total','box','appt'].forEach(t => {
+document.getElementById('view-' + t).style.display = t === btn.dataset.tab ? '' : 'none';
+});
+});
+});
+
+// RESET
+let pendingReset = null;
+function confirmReset(target) {
+pendingReset = target;
+const labels = { box:'le Box', appt:"l'Appartement", all:'tous les stocks' };
+document.getElementById('modal-title').textContent = 'Remettre à zéro';
+document.getElementById('modal-msg').textContent = `Voulez-vous vraiment remettre à zéro ${labels[target]} ? Cette action est irréversible.`;
+document.getElementById('modal-overlay').classList.add('show');
+}
+
+document.getElementById('rbtn-box').addEventListener('click', () => confirmReset('box'));
+document.getElementById('rbtn-appt').addEventListener('click', () => confirmReset('appt'));
+document.getElementById('rbtn-all').addEventListener('click', () => confirmReset('all'));
+document.getElementById('modal-cancel').addEventListener('click', () => {
+document.getElementById('modal-overlay').classList.remove('show');
+pendingReset = null;
+});
+document.getElementById('modal-confirm').addEventListener('click', () => {
+ITEMS.forEach(it => {
+if (pendingReset==='all'||pendingReset==='box') stock[it.id].box = 0;
+if (pendingReset==='all'||pendingReset==='appt') stock[it.id].appt = 0;
+});
+saveStock();
+document.getElementById('modal-overlay').classList.remove('show');
+pendingReset = null;
+renderAll();
+showToast('🗑 Stocks remis à zéro');
+});
+
+function renderAll() {
+['total','box','appt'].forEach(mode => renderCards(mode));
+updateSummary();
+}
+
+let toastTimer;
+function showToast(msg) {
+const t = document.getElementById('toast');
+t.textContent = msg;
+t.classList.add('show');
+clearTimeout(toastTimer);
+toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+renderAll();
+</script>
+</body>
+</html>
