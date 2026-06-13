@@ -270,9 +270,7 @@
     </div>
     <button class="btn-primary" id="btn-login">Se connecter</button>
     <div class="auth-error" id="auth-error"></div>
-    <div class="auth-toggle">
-      Pas encore de compte ? <a id="toggle-mode">Créer un compte</a>
-    </div>
+
   </div>
 </div>
 
@@ -356,7 +354,7 @@
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged }
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -429,16 +427,6 @@ async function saveStock() {
 }
 
 // ─── AUTH ───
-let isRegister = false;
-
-document.getElementById('toggle-mode').addEventListener('click', () => {
-  isRegister = !isRegister;
-  document.getElementById('btn-login').textContent = isRegister ? "Créer le compte" : "Se connecter";
-  document.getElementById('toggle-mode').textContent = isRegister ? "J'ai déjà un compte" : "Créer un compte";
-  document.querySelector('.auth-toggle').firstChild.textContent = isRegister ? "Déjà un compte ? " : "Pas encore de compte ? ";
-  document.getElementById('auth-error').style.display = 'none';
-});
-
 document.getElementById('btn-login').addEventListener('click', async () => {
   const email = document.getElementById('auth-email').value.trim();
   const pass  = document.getElementById('auth-password').value;
@@ -446,18 +434,12 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   errEl.style.display = 'none';
   if (!email || !pass) { errEl.textContent = "Veuillez remplir tous les champs."; errEl.style.display='block'; return; }
   try {
-    if (isRegister) {
-      await createUserWithEmailAndPassword(auth, email, pass);
-    } else {
-      await signInWithEmailAndPassword(auth, email, pass);
-    }
+    await signInWithEmailAndPassword(auth, email, pass);
   } catch(e) {
     const msgs = {
       'auth/invalid-email':'Email invalide.',
-      'auth/user-not-found':'Aucun compte avec cet email.',
-      'auth/wrong-password':'Mot de passe incorrect.',
-      'auth/email-already-in-use':'Cet email est déjà utilisé.',
-      'auth/weak-password':'Mot de passe trop faible (6 caractères min).',
+      'auth/user-not-found':'Identifiants incorrects.',
+      'auth/wrong-password':'Identifiants incorrects.',
       'auth/invalid-credential':'Email ou mot de passe incorrect.',
     };
     errEl.textContent = msgs[e.code] || ('Erreur : ' + e.message);
